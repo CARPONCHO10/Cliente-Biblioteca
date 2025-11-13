@@ -1,4 +1,3 @@
-
 import os
 import json
 import numpy as np
@@ -16,7 +15,7 @@ mode = st.sidebar.radio("Modo de uso", ["Usar API FastAPI", "Cargar artefactos l
 k = st.sidebar.slider("Cantidad de recomendaciones (k)", 1, 20, 5)
 
 if mode == "Usar API FastAPI":
-    base_url = st.sidebar.text_input("URL de la API", value="http://localhost:8000")
+    base_url = st.sidebar.text_input("URL de la API", value="https://bookrec-api-3rg8.onrender.com")
 else:
     model_dir = st.sidebar.text_input("Carpeta de modelos", value="models")
     data_dir = st.sidebar.text_input("Carpeta de datos (para historial de usuario)", value="data")
@@ -133,6 +132,7 @@ def local_search(q: str, model_dir: str):
 # ---------- UI Tabs ----------
 tab1, tab2, tab3, tab4 = st.tabs(["✅ Salud / Estado", "⭐ Recomendaciones", "📚 Similares", "🔎 Búsqueda"])
 
+# -------- TAB 1 --------
 with tab1:
     st.subheader("Estado del servicio / artefactos")
     if mode == "Usar API FastAPI":
@@ -151,12 +151,13 @@ with tab1:
         except Exception as e:
             st.error(f"Error cargando artefactos locales: {e}")
 
+# -------- TAB 2 --------
 with tab2:
     st.subheader("Recomendaciones por usuario")
-    colu1, colu2 = st.columns([1,1])
-    with colu1:
+    col1, col2 = st.columns([1,1])
+    with col1:
         user_id = st.text_input("user_id", value="u1")
-    with colu2:
+    with col2:
         k_val = st.number_input("k", min_value=1, max_value=50, value=k)
 
     if st.button("Recomendar"):
@@ -167,18 +168,21 @@ with tab2:
             else:
                 res = local_recommend(user_id, int(k_val), model_dir, data_dir)
                 items = res.get("items", [])
+
             if not items:
                 st.warning("No hay recomendaciones disponibles.")
             else:
                 for it in items:
-                    with st.container(border=True):
-                        st.markdown(f"**{it.get('title') or it['book_id']}**")
-                        st.caption(f"Autor: {it.get('author') or 'Desconocido'} | ID: `{it['book_id']}` | Score: {it.get('score'):.3f}")
+                    with st.container():
+                        st.markdown("### 📘 " + (it.get("title") or it["book_id"]))
+                        st.caption(f"Autor: {it.get('author') or 'Desconocido'} | ID: `{it['book_id']}`")
+                        st.write(f"**Score:** {it.get('score'):.3f}")
                         if it.get("tags"):
                             st.write("Etiquetas:", it["tags"])
         except Exception as e:
             st.error(f"Error al recomendar: {e}")
 
+# -------- TAB 3 --------
 with tab3:
     st.subheader("Libros similares a un `book_id`")
     col1, col2 = st.columns([1,1])
@@ -195,18 +199,21 @@ with tab3:
             else:
                 res = local_similar(book_id, int(k_val2), model_dir)
                 items = res.get("similar", [])
+
             if not items:
                 st.warning("No se encontraron similares.")
             else:
                 for it in items:
-                    with st.container(border=True):
-                        st.markdown(f"**{it.get('title') or it['book_id']}**")
-                        st.caption(f"Autor: {it.get('author') or 'Desconocido'} | ID: `{it['book_id']}` | Sim: {it.get('score'):.3f}")
+                    with st.container():
+                        st.markdown("### 📗 " + (it.get("title") or it["book_id"]))
+                        st.caption(f"Autor: {it.get('author') or 'Desconocido'} | ID: `{it['book_id']}`")
+                        st.write(f"**Sim:** {it.get('score'):.3f}")
                         if it.get("tags"):
                             st.write("Etiquetas:", it["tags"])
         except Exception as e:
             st.error(f"Error al buscar similares: {e}")
 
+# -------- TAB 4 --------
 with tab4:
     st.subheader("Búsqueda por título")
     query = st.text_input("Consulta", value="python")
@@ -218,13 +225,14 @@ with tab4:
             else:
                 res = local_search(query, model_dir)
                 results = res.get("results", [])
+
             if not results:
                 st.info("Sin resultados.")
             else:
                 st.write(f"Resultados: {len(results)}")
                 for it in results:
-                    with st.container(border=True):
-                        st.markdown(f"**{it.get('title') or it['book_id']}**")
+                    with st.container():
+                        st.markdown("### 📙 " + (it.get("title") or it["book_id"]))
                         st.caption(f"Autor: {it.get('author') or 'Desconocido'} | ID: `{it['book_id']}`")
                         if it.get("tags"):
                             st.write("Etiquetas:", it["tags"])
